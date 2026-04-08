@@ -7,4 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // App info
   getVersion: () => ipcRenderer.invoke('get-version'),
+
+  // Printing
+  printKitchenTicket: (data: unknown) => ipcRenderer.invoke('print:kitchen-ticket', data),
 });

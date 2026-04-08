@@ -51,6 +51,37 @@ app.whenReady().then(() => {
   registerMenuHandlers();
   registerOrderHandlers();
   registerShiftHandlers();
+
+  ipcMain.handle('print:kitchen-ticket', async (_event, data: {
+    tableNumber: number;
+    tableName: string;
+    waiterName: string;
+    orderId: string;
+    items: Array<{ name: string; quantity: number; notes?: string }>;
+  }) => {
+    try {
+      const { PosPrinter } = require('electron-pos-printer');
+      const printData: any[] = [
+        { type: 'text', value: '*** COCINA ***', style: { fontWeight: '700', textAlign: 'center', fontSize: '18px' } },
+        { type: 'text', value: `Mesa ${data.tableNumber} - ${data.tableName}`, style: { textAlign: 'center', fontSize: '14px' } },
+        { type: 'text', value: `Mesero: ${data.waiterName}`, style: { fontSize: '12px' } },
+        { type: 'text', value: new Date().toLocaleTimeString('es-MX'), style: { fontSize: '12px' } },
+        { type: 'text', value: '--------------------------------', style: {} },
+        ...data.items.flatMap(item => [
+          { type: 'text', value: `${item.quantity}x ${item.name}`, style: { fontWeight: '600', fontSize: '14px' } },
+          ...(item.notes ? [{ type: 'text', value: `   >> ${item.notes}`, style: { fontSize: '12px', color: '#666' } }] : []),
+        ]),
+        { type: 'text', value: '--------------------------------', style: {} },
+        { type: 'text', value: `Folio: ${data.orderId.slice(-6).toUpperCase()}`, style: { fontSize: '11px', textAlign: 'right' } },
+      ];
+      await PosPrinter.print(printData, { preview: true, pageSize: '80mm', copies: 1 });
+      return { success: true };
+    } catch (error) {
+      console.error('Print error:', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
   createWindow();
 });
 
