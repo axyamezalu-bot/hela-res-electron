@@ -3,6 +3,10 @@ import path from 'path';
 import { initDatabase } from './database/connection';
 import { registerUserHandlers } from './ipc/userHandlers';
 import { registerWasteHandlers } from './ipc/wasteHandlers';
+import { registerRestaurantTableHandlers } from './ipc/restaurantTableHandlers';
+import { registerMenuHandlers } from './ipc/menuHandlers';
+import { registerOrderHandlers } from './ipc/orderHandlers';
+import { registerShiftHandlers } from './ipc/shiftHandlers';
 
 const isDev = !app.isPackaged;
 
@@ -43,6 +47,10 @@ app.whenReady().then(() => {
   initDatabase();
   registerUserHandlers();
   registerWasteHandlers();
+  registerRestaurantTableHandlers();
+  registerMenuHandlers();
+  registerOrderHandlers();
+  registerShiftHandlers();
   createWindow();
 });
 
