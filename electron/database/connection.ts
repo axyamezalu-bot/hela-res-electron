@@ -7,7 +7,7 @@ let db: Database.Database | null = null;
 
 export function initDatabase(): Database.Database {
   const userDataPath = app.getPath('userData');
-  const dbPath = path.join(userDataPath, 'helapos.db');
+  const dbPath = path.join(userDataPath, 'helares.db');
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
