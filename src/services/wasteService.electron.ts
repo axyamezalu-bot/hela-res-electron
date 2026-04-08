@@ -1,4 +1,14 @@
-import type { WasteRecord } from './wasteService';
+export interface WasteRecord {
+  id: string;
+  productId?: string;
+  productName: string;
+  productCode: string;
+  quantity: number;
+  reason: string;
+  userId?: string;
+  userName: string;
+  date: string;
+}
 
 function rowToWaste(row: any): WasteRecord {
   return {
@@ -15,14 +25,14 @@ function rowToWaste(row: any): WasteRecord {
 }
 
 export const wasteServiceElectron = {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<WasteRecord[]> {
     const rows = await (window as any).electronAPI.query('waste:getAll');
     return rows.map(rowToWaste);
   },
   async create(data: {
     productId: string; productName: string; productCode: string;
     quantity: number; reason: string; userId: string; userName: string;
-  }): Promise<any> {
+  }): Promise<WasteRecord> {
     const row = await (window as any).electronAPI.query('waste:create', data);
     return rowToWaste(row);
   },

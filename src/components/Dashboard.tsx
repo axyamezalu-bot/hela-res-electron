@@ -1,12 +1,6 @@
-import type { Product } from '../App';
 import logoImage from '../assets/hela-solutions.jpeg';
 
-interface DashboardProps {
-    products?: Product[];
-    onNavigateToProducts?: () => void;
-}
-
-export function Dashboard({ products: _products, onNavigateToProducts: _onNavigateToProducts }: DashboardProps = {}) {
+export function Dashboard() {
     return (
         <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
             <div className="text-center space-y-8">

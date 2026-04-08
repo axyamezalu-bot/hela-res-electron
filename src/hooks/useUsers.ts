@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import { userService } from '../services/userService';
 import { userServiceElectron } from '../services/userService.electron';
 import type { User } from '../App';
-
-const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -14,12 +11,7 @@ export function useUsers() {
     setLoading(true);
     setError(null);
     try {
-      if (isElectron) {
-        const data = await userServiceElectron.getAll();
-        setUsers(data);
-        return;
-      }
-      const data = await userService.getAll();
+      const data = await userServiceElectron.getAll();
       setUsers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar usuarios');
@@ -31,14 +23,9 @@ export function useUsers() {
   const addUser = async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
     setError(null);
     try {
-      if (isElectron) {
-        const newUser = await userServiceElectron.create(user);
-        setUsers(prev => [newUser, ...prev]);
-        return newUser;
-      }
-      const created = await userService.create(user);
-      setUsers(prev => [...prev, created]);
-      return created;
+      const newUser = await userServiceElectron.create(user);
+      setUsers(prev => [newUser, ...prev]);
+      return newUser;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al crear usuario';
       setError(msg);
@@ -49,12 +36,7 @@ export function useUsers() {
   const updateUser = async (id: string, user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
     setError(null);
     try {
-      if (isElectron) {
-        const updated = await userServiceElectron.update(id, user);
-        setUsers(prev => prev.map(u => u.id === id ? updated : u));
-        return updated;
-      }
-      const updated = await userService.update(id, user);
+      const updated = await userServiceElectron.update(id, user);
       setUsers(prev => prev.map(u => u.id === id ? updated : u));
       return updated;
     } catch (err) {
@@ -67,12 +49,7 @@ export function useUsers() {
   const deleteUser = async (id: string): Promise<void> => {
     setError(null);
     try {
-      if (isElectron) {
-        await userServiceElectron.delete(id);
-        setUsers(prev => prev.filter(u => u.id !== id));
-        return;
-      }
-      await userService.delete(id);
+      await userServiceElectron.delete(id);
       setUsers(prev => prev.filter(u => u.id !== id));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al eliminar usuario';
@@ -81,13 +58,10 @@ export function useUsers() {
     }
   };
 
-  const verifyPin = async (userId: string, pin: string): Promise<User | null> => {
+  const verifyPin = async (userId: string, pin: string): Promise<boolean> => {
     setError(null);
     try {
-      if (isElectron) {
-        return await userServiceElectron.verifyPin(userId, pin) as any;
-      }
-      return await userService.verifyPin(pin);
+      return await userServiceElectron.verifyPin(userId, pin);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al verificar PIN';
       setError(msg);

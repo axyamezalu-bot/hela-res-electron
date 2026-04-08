@@ -2,17 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { initDatabase } from './database/connection';
 import { registerUserHandlers } from './ipc/userHandlers';
-import { registerProductHandlers } from './ipc/productHandlers';
-import { registerClientHandlers } from './ipc/clientHandlers';
-import { registerSaleHandlers } from './ipc/saleHandlers';
-import { registerCashRegisterHandlers } from './ipc/cashRegisterHandlers';
-import { registerCreditHandlers } from './ipc/creditHandlers';
 import { registerWasteHandlers } from './ipc/wasteHandlers';
-import { registerSupplierHandlers } from './ipc/supplierHandlers';
-import { registerSalesReportHandlers } from './ipc/salesReportHandlers';
-import { registerPartialCutHandlers } from './ipc/partialCutHandlers';
-import { registerExpenseHandlers } from './ipc/expenseHandlers';
-import { registerDepositHandlers } from './ipc/depositHandlers';
 
 const isDev = !app.isPackaged;
 
@@ -52,17 +42,7 @@ function createWindow() {
 app.whenReady().then(() => {
   initDatabase();
   registerUserHandlers();
-  registerProductHandlers();
-  registerClientHandlers();
-  registerSaleHandlers();
-  registerCashRegisterHandlers();
-  registerCreditHandlers();
   registerWasteHandlers();
-  registerSupplierHandlers();
-  registerSalesReportHandlers();
-  registerPartialCutHandlers();
-  registerExpenseHandlers();
-  registerDepositHandlers();
   createWindow();
 });
 
