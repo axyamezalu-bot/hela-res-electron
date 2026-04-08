@@ -7,17 +7,11 @@ const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const connection_1 = require("./database/connection");
 const userHandlers_1 = require("./ipc/userHandlers");
-const productHandlers_1 = require("./ipc/productHandlers");
-const clientHandlers_1 = require("./ipc/clientHandlers");
-const saleHandlers_1 = require("./ipc/saleHandlers");
-const cashRegisterHandlers_1 = require("./ipc/cashRegisterHandlers");
-const creditHandlers_1 = require("./ipc/creditHandlers");
 const wasteHandlers_1 = require("./ipc/wasteHandlers");
-const supplierHandlers_1 = require("./ipc/supplierHandlers");
-const salesReportHandlers_1 = require("./ipc/salesReportHandlers");
-const partialCutHandlers_1 = require("./ipc/partialCutHandlers");
-const expenseHandlers_1 = require("./ipc/expenseHandlers");
-const depositHandlers_1 = require("./ipc/depositHandlers");
+const restaurantTableHandlers_1 = require("./ipc/restaurantTableHandlers");
+const menuHandlers_1 = require("./ipc/menuHandlers");
+const orderHandlers_1 = require("./ipc/orderHandlers");
+const shiftHandlers_1 = require("./ipc/shiftHandlers");
 const isDev = !electron_1.app.isPackaged;
 let mainWindow = null;
 function createWindow() {
@@ -51,17 +45,35 @@ function createWindow() {
 electron_1.app.whenReady().then(() => {
     (0, connection_1.initDatabase)();
     (0, userHandlers_1.registerUserHandlers)();
-    (0, productHandlers_1.registerProductHandlers)();
-    (0, clientHandlers_1.registerClientHandlers)();
-    (0, saleHandlers_1.registerSaleHandlers)();
-    (0, cashRegisterHandlers_1.registerCashRegisterHandlers)();
-    (0, creditHandlers_1.registerCreditHandlers)();
     (0, wasteHandlers_1.registerWasteHandlers)();
-    (0, supplierHandlers_1.registerSupplierHandlers)();
-    (0, salesReportHandlers_1.registerSalesReportHandlers)();
-    (0, partialCutHandlers_1.registerPartialCutHandlers)();
-    (0, expenseHandlers_1.registerExpenseHandlers)();
-    (0, depositHandlers_1.registerDepositHandlers)();
+    (0, restaurantTableHandlers_1.registerRestaurantTableHandlers)();
+    (0, menuHandlers_1.registerMenuHandlers)();
+    (0, orderHandlers_1.registerOrderHandlers)();
+    (0, shiftHandlers_1.registerShiftHandlers)();
+    electron_1.ipcMain.handle('print:kitchen-ticket', async (_event, data) => {
+        try {
+            const { PosPrinter } = require('electron-pos-printer');
+            const printData = [
+                { type: 'text', value: '*** COCINA ***', style: { fontWeight: '700', textAlign: 'center', fontSize: '18px' } },
+                { type: 'text', value: `Mesa ${data.tableNumber} - ${data.tableName}`, style: { textAlign: 'center', fontSize: '14px' } },
+                { type: 'text', value: `Mesero: ${data.waiterName}`, style: { fontSize: '12px' } },
+                { type: 'text', value: new Date().toLocaleTimeString('es-MX'), style: { fontSize: '12px' } },
+                { type: 'text', value: '--------------------------------', style: {} },
+                ...data.items.flatMap(item => [
+                    { type: 'text', value: `${item.quantity}x ${item.name}`, style: { fontWeight: '600', fontSize: '14px' } },
+                    ...(item.notes ? [{ type: 'text', value: `   >> ${item.notes}`, style: { fontSize: '12px', color: '#666' } }] : []),
+                ]),
+                { type: 'text', value: '--------------------------------', style: {} },
+                { type: 'text', value: `Folio: ${data.orderId.slice(-6).toUpperCase()}`, style: { fontSize: '11px', textAlign: 'right' } },
+            ];
+            await PosPrinter.print(printData, { preview: true, pageSize: '80mm', copies: 1 });
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Print error:', error);
+            return { success: false, error: String(error) };
+        }
+    });
     createWindow();
 });
 electron_1.app.on('window-all-closed', () => {

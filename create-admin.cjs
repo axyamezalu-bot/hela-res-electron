@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const os = require('os');
 
-const dbPath = path.join(os.homedir(), 'AppData', 'Roaming', 'hela-pos-pro', 'helapos.db');
+const dbPath = path.join(os.homedir(), 'AppData', 'Roaming', 'hela-res-electron', 'helares.db');
 const db = new Database(dbPath);
 
 const hash = bcrypt.hashSync('admin123', 10);

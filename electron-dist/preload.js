@@ -6,4 +6,6 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     query: (channel, data) => electron_1.ipcRenderer.invoke(channel, data),
     // App info
     getVersion: () => electron_1.ipcRenderer.invoke('get-version'),
+    // Printing
+    printKitchenTicket: (data) => electron_1.ipcRenderer.invoke('print:kitchen-ticket', data),
 });
