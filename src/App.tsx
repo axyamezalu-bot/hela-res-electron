@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { Dashboard } from './components/Dashboard';
 import { PinAuthDialog } from './components/PinAuthDialog';
+import { FloorPlan } from './components/restaurant/FloorPlan';
+import { OrderPanel } from './components/restaurant/OrderPanel';
+import { MenuAdmin } from './components/restaurant/MenuAdmin';
 import { useUsers } from './hooks/useUsers';
 import { useWaste } from './hooks/useWaste';
+import { useRestaurant } from './hooks/useRestaurant';
+import { restaurantService } from './services/restaurantService';
+import type { RestaurantTable, OrderItem, MenuItem } from './types/restaurant';
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -44,12 +50,37 @@ interface NavItem {
 export default function App() {
   const { users } = useUsers();
   useWaste();
+  const {
+    tables,
+    activeOrders,
+    menuCategories,
+    menuItems,
+    createTable,
+    updateTablePosition,
+    createOrder,
+    addOrderItem,
+    removeOrderItem,
+    sendToKitchen,
+    requestBill,
+    closeOrder,
+    cancelOrder,
+    createCategory,
+    deleteCategory,
+    createMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+  } = useRestaurant();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [pendingView, setPendingView] = useState<ViewType | null>(null);
+
+  const [selectedTable, setSelectedTable] = useState<RestaurantTable | null>(null);
+  const [orderPanelOpen, setOrderPanelOpen] = useState(false);
+  const [currentOrderItems, setCurrentOrderItems] = useState<OrderItem[]>([]);
+  const [floorEditMode, setFloorEditMode] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('currentUser');
@@ -108,6 +139,50 @@ export default function App() {
     setPinDialogOpen(false);
   };
 
+  const loadOrderItems = async (orderId: string) => {
+    const items = await restaurantService.getOrderItems(orderId);
+    setCurrentOrderItems(items);
+  };
+
+  const handleTableClick = async (table: RestaurantTable) => {
+    setSelectedTable(table);
+    const order = activeOrders.find((o) => o.table_id === table.id);
+    if (order) await loadOrderItems(order.id);
+    else setCurrentOrderItems([]);
+    setOrderPanelOpen(true);
+  };
+
+  const handleAddTable = async (data: {
+    number: number;
+    name: string;
+    seats: number;
+    shape: 'rectangle' | 'circle';
+  }) => {
+    await createTable({
+      number: data.number,
+      name: data.name,
+      seats: data.seats,
+      shape: data.shape,
+      x: 100 + tables.length * 20,
+      y: 100,
+      width: 120,
+      height: 80,
+    });
+  };
+
+  // MenuAdmin expects (id, Partial<MenuItem>) — adapt to hook signature
+  const handleUpdateMenuItem = async (id: string, data: Partial<MenuItem>) => {
+    const existing = menuItems.find((m) => m.id === id);
+    if (!existing) return;
+    await updateMenuItem({
+      id,
+      name: data.name ?? existing.name,
+      description: data.description ?? existing.description,
+      price: data.price ?? existing.price,
+      available: (data.available ?? existing.available) === 1,
+    });
+  };
+
   if (!currentUser) {
     return (
       <>
@@ -123,14 +198,128 @@ export default function App() {
         return <Dashboard />;
       case 'users':
         return <Placeholder label="Usuarios" icon={UsersIcon} />;
-      case 'floorPlan':
-        return <Placeholder label="Mesas / Comandas" icon={UtensilsCrossed} />;
-      case 'menuAdmin':
-        return <Placeholder label="Administrar Menú" icon={ChefHat} />;
       case 'inventory':
         return <Placeholder label="Inventario" icon={PackageOpen} />;
       case 'reports':
         return <Placeholder label="Reportes" icon={FileText} />;
+      case 'menuAdmin':
+        return (
+          <MenuAdmin
+            menuCategories={menuCategories}
+            menuItems={menuItems}
+            onCreateCategory={async (d) => { await createCategory(d); }}
+            onDeleteCategory={deleteCategory}
+            onCreateMenuItem={async (d) => { await createMenuItem(d); }}
+            onUpdateMenuItem={handleUpdateMenuItem}
+            onDeleteMenuItem={deleteMenuItem}
+          />
+        );
+      case 'floorPlan':
+        return (
+          <>
+            <FloorPlan
+              tables={tables}
+              activeOrders={activeOrders}
+              currentUser={currentUser}
+              editMode={floorEditMode}
+              onEditModeChange={setFloorEditMode}
+              onTableClick={handleTableClick}
+              onUpdateTablePosition={updateTablePosition}
+              onAddTable={handleAddTable}
+            />
+            {orderPanelOpen && selectedTable && (
+              <OrderPanel
+                table={selectedTable}
+                order={activeOrders.find((o) => o.table_id === selectedTable.id) ?? null}
+                orderItems={currentOrderItems}
+                menuCategories={menuCategories}
+                menuItems={menuItems}
+                currentUser={currentUser}
+                onCreateOrder={async () => {
+                  const created = await createOrder({
+                    table_id: selectedTable.id,
+                    table_name: selectedTable.name,
+                    waiter_id: currentUser.id,
+                    waiter_name: currentUser.fullName,
+                  });
+                  await loadOrderItems(created.id);
+                }}
+                onAddItem={async (item, qty, notes) => {
+                  const order = activeOrders.find((o) => o.table_id === selectedTable.id);
+                  if (!order) return;
+                  await addOrderItem({
+                    order_id: order.id,
+                    menu_item_id: item.id,
+                    menu_item_name: item.name,
+                    unit_price: item.price,
+                    quantity: qty,
+                    notes,
+                  });
+                  await loadOrderItems(order.id);
+                }}
+                onRemoveItem={async (oi) => {
+                  await removeOrderItem({
+                    item_id: oi.id,
+                    order_id: oi.order_id,
+                    quantity: oi.quantity,
+                    unit_price: oi.unit_price,
+                  });
+                  await loadOrderItems(oi.order_id);
+                }}
+                onSendToKitchen={async () => {
+                  const order = activeOrders.find((o) => o.table_id === selectedTable.id);
+                  if (!order) return [];
+                  const sent = await sendToKitchen(order.id);
+                  await loadOrderItems(order.id);
+                  return sent;
+                }}
+                onRequestBill={async () => {
+                  await requestBill(selectedTable.id);
+                }}
+                onCloseOrder={async (pm) => {
+                  const order = activeOrders.find((o) => o.table_id === selectedTable.id);
+                  if (!order) return;
+                  await closeOrder({
+                    order_id: order.id,
+                    table_id: selectedTable.id,
+                    payment_method: pm,
+                  });
+                  setOrderPanelOpen(false);
+                  setSelectedTable(null);
+                  setCurrentOrderItems([]);
+                }}
+                onCancelOrder={async () => {
+                  const order = activeOrders.find((o) => o.table_id === selectedTable.id);
+                  if (!order) return;
+                  await cancelOrder({ order_id: order.id, table_id: selectedTable.id });
+                  setOrderPanelOpen(false);
+                  setSelectedTable(null);
+                  setCurrentOrderItems([]);
+                }}
+                onPrintKitchenTicket={async (items) => {
+                  const order = activeOrders.find((o) => o.table_id === selectedTable.id);
+                  if (!order) return;
+                  await restaurantService.printKitchenTicket({
+                    tableNumber: selectedTable.number,
+                    tableName: selectedTable.name,
+                    waiterName: currentUser.fullName,
+                    orderId: order.id,
+                    items: items.map((i) => ({
+                      name: i.menu_item_name,
+                      quantity: i.quantity,
+                      notes: i.notes,
+                    })),
+                  });
+                }}
+                onClose={() => {
+                  setOrderPanelOpen(false);
+                  setSelectedTable(null);
+                  setCurrentOrderItems([]);
+                }}
+              />
+            )}
+          </>
+        );
       default:
         return <Dashboard />;
     }
