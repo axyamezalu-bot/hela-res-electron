@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { Dashboard } from './components/Dashboard';
 import { PinAuthDialog } from './components/PinAuthDialog';
@@ -83,25 +83,12 @@ export default function App() {
   const [currentOrderItems, setCurrentOrderItems] = useState<OrderItem[]>([]);
   const [floorEditMode, setFloorEditMode] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('currentUser');
-    if (stored) {
-      try {
-        setCurrentUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem('currentUser');
-      }
-    }
-  }, []);
-
   const handleLogin = (user: User) => {
     setCurrentUser(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
     setCurrentView('dashboard');
   };
 
@@ -112,11 +99,11 @@ export default function App() {
     { id: 'floorPlan', label: 'Mesas / Comandas', icon: UtensilsCrossed },
     ...(isAdmin
       ? ([
-          { id: 'menuAdmin', label: 'Administrar Menú', icon: ChefHat },
-          { id: 'inventory', label: 'Inventario', icon: PackageOpen },
-          { id: 'users', label: 'Usuarios', icon: UsersIcon },
-          { id: 'reports', label: 'Reportes', icon: FileText },
-        ] as NavItem[])
+        { id: 'menuAdmin', label: 'Administrar Menú', icon: ChefHat },
+        { id: 'inventory', label: 'Inventario', icon: PackageOpen },
+        { id: 'users', label: 'Usuarios', icon: UsersIcon },
+        { id: 'reports', label: 'Reportes', icon: FileText },
+      ] as NavItem[])
       : []),
   ];
 
@@ -343,9 +330,8 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  active ? 'bg-gray-900 text-white' : 'hover:bg-gray-100 text-gray-700'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${active ? 'bg-gray-900 text-white' : 'hover:bg-gray-100 text-gray-700'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{item.label}</span>
