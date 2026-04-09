@@ -56,6 +56,7 @@ export default function App() {
     menuCategories,
     menuItems,
     createTable,
+    deleteTable,
     updateTablePosition,
     createOrder,
     addOrderItem,
@@ -226,6 +227,7 @@ export default function App() {
               onTableClick={handleTableClick}
               onUpdateTablePosition={updateTablePosition}
               onAddTable={handleAddTable}
+              onDeleteTable={deleteTable}
             />
             {orderPanelOpen && selectedTable && (
               <OrderPanel

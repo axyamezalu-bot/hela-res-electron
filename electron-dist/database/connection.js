@@ -12,7 +12,7 @@ const migrations_1 = require("./migrations");
 let db = null;
 function initDatabase() {
     const userDataPath = electron_1.app.getPath('userData');
-    const dbPath = path_1.default.join(userDataPath, 'helapos.db');
+    const dbPath = path_1.default.join(userDataPath, 'helares.db');
     db = new better_sqlite3_1.default(dbPath);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');

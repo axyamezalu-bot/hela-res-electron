@@ -77,6 +77,18 @@ export function useRestaurant() {
     }
   };
 
+  const deleteTable = async (id: string) => {
+    setError(null);
+    try {
+      await restaurantService.deleteTable(id);
+      setTables(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al eliminar mesa';
+      setError(msg);
+      throw err;
+    }
+  };
+
   const updateTableStatus = async (id: string, status: RestaurantTable['status']) => {
     setError(null);
     setTables(prev => prev.map(t => (t.id === id ? { ...t, status } : t)));
@@ -286,6 +298,7 @@ export function useRestaurant() {
     error,
     fetchAll,
     createTable,
+    deleteTable,
     updateTablePosition,
     updateTableStatus,
     createOrder,

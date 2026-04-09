@@ -25,7 +25,7 @@ function createWindow() {
             contextIsolation: true,
             nodeIntegration: false,
         },
-        title: 'HELA POS',
+        title: 'HELA RES',
         show: false,
     });
     if (isDev) {

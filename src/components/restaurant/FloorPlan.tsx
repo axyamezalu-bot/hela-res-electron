@@ -8,7 +8,18 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { UtensilsCrossed, Plus, Users } from 'lucide-react';
+import { UtensilsCrossed, Plus, Users, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
@@ -45,6 +56,7 @@ interface FloorPlanProps {
     seats: number;
     shape: 'rectangle' | 'circle';
   }) => Promise<void>;
+  onDeleteTable: (id: string) => Promise<void>;
 }
 
 const STATUS_STYLES: Record<RestaurantTable['status'], string> = {
@@ -62,8 +74,32 @@ export function FloorPlan({
   onTableClick,
   onUpdateTablePosition,
   onAddTable,
+  onDeleteTable,
 }: FloorPlanProps) {
   const [addOpen, setAddOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmTable = tables.find(t => t.id === confirmDeleteId) ?? null;
+
+  const handleDeleteRequest = (table: RestaurantTable) => {
+    if (table.status !== 'libre') {
+      toast.error('No se puede eliminar una mesa ocupada');
+      return;
+    }
+    setConfirmDeleteId(table.id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    try {
+      await onDeleteTable(confirmDeleteId);
+      setConfirmDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
   const isMesero = currentUser.role === 'Mesero';
 
   const counts = {
@@ -143,12 +179,37 @@ export function FloorPlan({
                   order={order}
                   editMode={editMode}
                   onClick={() => !editMode && onTableClick(table)}
+                  onDelete={() => handleDeleteRequest(table)}
                 />
               );
             })}
           </div>
         </DndContext>
       )}
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(v) => !v && setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              ¿Eliminar mesa {confirmTable?.number}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción ocultará la mesa del plano. No se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add table dialog */}
       <AddTableDialog
@@ -178,9 +239,10 @@ interface TableCardProps {
   order?: Order;
   editMode: boolean;
   onClick: () => void;
+  onDelete: () => void;
 }
 
-function TableCard({ table, order, editMode, onClick }: TableCardProps) {
+function TableCard({ table, order, editMode, onClick, onDelete }: TableCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: table.id,
     disabled: !editMode,
@@ -211,6 +273,17 @@ function TableCard({ table, order, editMode, onClick }: TableCardProps) {
         <Badge className="absolute -top-2 -right-2 bg-green-600 hover:bg-green-600 text-white">
           ${order.total.toFixed(2)}
         </Badge>
+      )}
+      {editMode && (
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center shadow hover:bg-red-700"
+          title="Eliminar mesa"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
       )}
       <div className="text-2xl font-bold leading-none">{table.number}</div>
       <div className="text-xs opacity-80 mt-1 truncate max-w-full">{table.name}</div>
