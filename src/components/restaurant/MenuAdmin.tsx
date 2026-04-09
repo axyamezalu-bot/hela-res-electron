@@ -414,22 +414,22 @@ function ItemDialog({
     register, handleSubmit, reset, setValue, watch,
     formState: { errors, isSubmitting },
   } = useForm<ItemFormValues>({
-    resolver: zodResolver(itemSchema),
+    resolver: zodResolver(itemSchema) as any,
     values: editing
       ? {
-          category_id: editing.category_id,
-          name: editing.name,
-          description: editing.description ?? '',
-          price: editing.price,
-          available: editing.available === 1,
-        }
+        category_id: editing.category_id,
+        name: editing.name,
+        description: editing.description ?? '',
+        price: editing.price,
+        available: editing.available === 1,
+      }
       : {
-          category_id: menuCategories[0]?.id ?? '',
-          name: '',
-          description: '',
-          price: 0,
-          available: true,
-        },
+        category_id: menuCategories[0]?.id ?? '',
+        name: '',
+        description: '',
+        price: 0,
+        available: true,
+      },
   });
 
   const categoryId = watch('category_id');
