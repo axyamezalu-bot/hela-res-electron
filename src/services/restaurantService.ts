@@ -121,6 +121,9 @@ export const restaurantService = {
   async getShiftHistory(): Promise<Shift[]> {
     return await api().query('shifts:getHistory');
   },
+  async getOrdersByDate(date: string): Promise<Order[]> {
+    return await api().query('shifts:getOrdersByDate', date);
+  },
 
   // Printing
   async printKitchenTicket(data: {

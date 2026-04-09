@@ -41,4 +41,16 @@ export function registerShiftHandlers() {
     const db = getDatabase();
     return db.prepare('SELECT * FROM shifts ORDER BY opened_at DESC LIMIT 30').all();
   });
+
+  ipcMain.handle('shifts:getOrdersByDate', (_event, date: string) => {
+    const db = getDatabase();
+    return db.prepare(`
+      SELECT o.*, rt.number as table_number
+      FROM orders o
+      JOIN restaurant_tables rt ON o.table_id = rt.id
+      WHERE date(o.opened_at) = date(?)
+        AND o.status = 'cobrada'
+      ORDER BY o.closed_at DESC
+    `).all(date);
+  });
 }

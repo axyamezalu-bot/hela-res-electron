@@ -7,6 +7,7 @@ import { OrderPanel } from './components/restaurant/OrderPanel';
 import { MenuAdmin } from './components/restaurant/MenuAdmin';
 import { UserManagement } from './components/restaurant/UserManagement';
 import { InventoryManagement } from './components/restaurant/InventoryManagement';
+import { Reports } from './components/restaurant/Reports';
 import { useUsers } from './hooks/useUsers';
 import { useWaste } from './hooks/useWaste';
 import { useRestaurant } from './hooks/useRestaurant';
@@ -80,6 +81,9 @@ export default function App() {
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
+    activeShift,
+    openShift,
+    closeShift,
   } = useRestaurant();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -218,7 +222,14 @@ export default function App() {
           />
         );
       case 'reports':
-        return <Placeholder label="Reportes" icon={FileText} />;
+        return (
+          <Reports
+            activeShift={activeShift}
+            currentUser={currentUser}
+            onOpenShift={openShift}
+            onCloseShift={closeShift}
+          />
+        );
       case 'menuAdmin':
         return (
           <MenuAdmin
@@ -401,17 +412,3 @@ export default function App() {
   );
 }
 
-function Placeholder({
-  label,
-  icon: Icon,
-}: {
-  label: string;
-  icon: typeof LayoutDashboard;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-4">
-      <Icon className="w-16 h-16" />
-      <p className="text-lg">{label} — Módulo en construcción</p>
-    </div>
-  );
-}

@@ -291,7 +291,7 @@ export function OrderPanel(props: OrderPanelProps) {
                     Pedir Cuenta
                   </Button>
                 )}
-                {(order.status === 'cuenta_pedida' || total > 0) && (
+                {order.status === 'abierta' && total > 0 && (
                   <Button onClick={() => setPayOpen(true)} disabled={loading} className="bg-green-600 hover:bg-green-700">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Cobrar
