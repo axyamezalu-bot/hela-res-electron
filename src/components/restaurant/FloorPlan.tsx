@@ -216,6 +216,7 @@ export function FloorPlan({
         open={addOpen}
         onOpenChange={setAddOpen}
         defaultNumber={tables.length + 1}
+        existingNumbers={tables.map(t => t.number)}
         onSubmit={async (data) => {
           await onAddTable(data);
           setAddOpen(false);
@@ -317,6 +318,7 @@ interface AddTableDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   defaultNumber: number;
+  existingNumbers: number[];
   onSubmit: (data: {
     number: number;
     name: string;
@@ -325,7 +327,7 @@ interface AddTableDialogProps {
   }) => Promise<void>;
 }
 
-function AddTableDialog({ open, onOpenChange, defaultNumber, onSubmit }: AddTableDialogProps) {
+function AddTableDialog({ open, onOpenChange, defaultNumber, existingNumbers, onSubmit }: AddTableDialogProps) {
   const [number, setNumber] = useState<number>(defaultNumber);
   const [name, setName] = useState('');
   const [seats, setSeats] = useState('4');
@@ -346,6 +348,10 @@ function AddTableDialog({ open, onOpenChange, defaultNumber, onSubmit }: AddTabl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (existingNumbers.includes(Number(number))) {
+      toast.error(`Ya existe una mesa con el número ${number}`);
+      return;
+    }
     setSubmitting(true);
     try {
       await onSubmit({
