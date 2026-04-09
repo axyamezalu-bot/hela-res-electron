@@ -42,6 +42,23 @@ export function registerShiftHandlers() {
     return db.prepare('SELECT * FROM shifts ORDER BY opened_at DESC LIMIT 30').all();
   });
 
+  ipcMain.handle('shifts:getSalesByWaiter', (_event, date: string) => {
+    const db = getDatabase();
+    return db.prepare(`
+      SELECT
+        waiter_name,
+        waiter_id,
+        COUNT(*) as total_orders,
+        SUM(total) as total_amount,
+        AVG(total) as avg_ticket
+      FROM orders
+      WHERE date(opened_at) = date(?)
+        AND status = 'cobrada'
+      GROUP BY waiter_id, waiter_name
+      ORDER BY total_amount DESC
+    `).all(date);
+  });
+
   ipcMain.handle('shifts:getOrdersByDate', (_event, date: string) => {
     const db = getDatabase();
     return db.prepare(`

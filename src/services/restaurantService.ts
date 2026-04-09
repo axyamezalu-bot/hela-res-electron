@@ -124,6 +124,15 @@ export const restaurantService = {
   async getOrdersByDate(date: string): Promise<Order[]> {
     return await api().query('shifts:getOrdersByDate', date);
   },
+  async getSalesByWaiter(date: string): Promise<Array<{
+    waiter_name: string;
+    waiter_id: string;
+    total_orders: number;
+    total_amount: number;
+    avg_ticket: number;
+  }>> {
+    return await api().query('shifts:getSalesByWaiter', date);
+  },
 
   // Printing
   async printKitchenTicket(data: {

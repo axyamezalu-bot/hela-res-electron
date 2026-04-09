@@ -197,7 +197,14 @@ export default function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return (
+          <Dashboard
+            tables={tables}
+            activeOrders={activeOrders}
+            activeShift={activeShift}
+            inventoryItems={inventoryItems}
+          />
+        );
       case 'users':
         return (
           <UserManagement
@@ -350,7 +357,14 @@ export default function App() {
           </>
         );
       default:
-        return <Dashboard />;
+        return (
+          <Dashboard
+            tables={tables}
+            activeOrders={activeOrders}
+            activeShift={activeShift}
+            inventoryItems={inventoryItems}
+          />
+        );
     }
   };
 

@@ -84,6 +84,9 @@ export function OrderPanel(props: OrderPanelProps) {
   const [payOpen, setPayOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'menu' | 'order'>('menu');
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitParts, setSplitParts] = useState(2);
+  const [splitMethod, setSplitMethod] = useState<'Efectivo' | 'Tarjeta'>('Efectivo');
 
   const isMesero = currentUser.role === 'Mesero';
   const status = STATUS_LABELS[table.status];
@@ -135,7 +138,22 @@ export function OrderPanel(props: OrderPanelProps) {
     wrap(async () => {
       await onCloseOrder(method);
       setPayOpen(false);
+      setSplitMode(false);
     });
+
+  const handleConfirmSplit = () =>
+    wrap(async () => {
+      await onCloseOrder(`dividido-${splitParts}-${splitMethod}`);
+      setPayOpen(false);
+      setSplitMode(false);
+    });
+
+  const closePayDialog = (open: boolean) => {
+    setPayOpen(open);
+    if (!open) setSplitMode(false);
+  };
+
+  const perPerson = splitParts > 0 ? Math.ceil((total / splitParts) * 100) / 100 : 0;
 
   const handleCancel = () =>
     wrap(async () => {
@@ -314,28 +332,80 @@ export function OrderPanel(props: OrderPanelProps) {
         )}
 
         {/* Pay dialog */}
-        <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <Dialog open={payOpen} onOpenChange={closePayDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Selecciona método de pago</DialogTitle>
+              <DialogTitle>{splitMode ? 'Dividir cuenta' : 'Selecciona método de pago'}</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-3 gap-3 py-4">
-              <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => handlePay('Efectivo')}>
-                <DollarSign className="w-6 h-6 mb-1" />
-                Efectivo
-              </Button>
-              <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => handlePay('Tarjeta')}>
-                <Receipt className="w-6 h-6 mb-1" />
-                Tarjeta
-              </Button>
-              <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => handlePay('Dividir')}>
-                <Receipt className="w-6 h-6 mb-1" />
-                Dividir
-              </Button>
-            </div>
+            {!splitMode ? (
+              <div className="grid grid-cols-3 gap-3 py-4">
+                <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => handlePay('Efectivo')}>
+                  <DollarSign className="w-6 h-6 mb-1" />
+                  Efectivo
+                </Button>
+                <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => handlePay('Tarjeta')}>
+                  <Receipt className="w-6 h-6 mb-1" />
+                  Tarjeta
+                </Button>
+                <Button variant="outline" className="h-20 flex-col" disabled={loading} onClick={() => setSplitMode(true)}>
+                  <Receipt className="w-6 h-6 mb-1" />
+                  Dividir
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">¿En cuántas partes?</label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={20}
+                    value={splitParts}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!isNaN(v)) setSplitParts(Math.min(20, Math.max(2, v)));
+                    }}
+                  />
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-md">
+                  <div className="text-sm text-gray-600">{splitParts} personas</div>
+                  <div className="text-2xl font-bold">${perPerson.toFixed(2)} cada una</div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Método de pago</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={splitMethod === 'Efectivo' ? 'default' : 'outline'}
+                      onClick={() => setSplitMethod('Efectivo')}
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" /> Efectivo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={splitMethod === 'Tarjeta' ? 'default' : 'outline'}
+                      onClick={() => setSplitMethod('Tarjeta')}
+                    >
+                      <Receipt className="w-4 h-4 mr-2" /> Tarjeta
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  disabled={loading}
+                  onClick={handleConfirmSplit}
+                >
+                  Confirmar cobro dividido
+                </Button>
+              </div>
+            )}
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setPayOpen(false)} disabled={loading}>
-                Cancelar
+              <Button
+                variant="ghost"
+                onClick={() => (splitMode ? setSplitMode(false) : closePayDialog(false))}
+                disabled={loading}
+              >
+                {splitMode ? 'Volver' : 'Cancelar'}
               </Button>
             </DialogFooter>
           </DialogContent>

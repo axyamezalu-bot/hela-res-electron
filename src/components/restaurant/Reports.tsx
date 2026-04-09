@@ -83,19 +83,33 @@ function CurrentShiftTab({ activeShift, currentUser, onOpenShift, onCloseShift }
   const [confirmClose, setConfirmClose] = useState(false);
   const [ordersToday, setOrdersToday] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [salesByWaiter, setSalesByWaiter] = useState<Array<{
+    waiter_name: string;
+    waiter_id: string;
+    total_orders: number;
+    total_amount: number;
+    avg_ticket: number;
+  }>>([]);
 
   const isAdmin = currentUser.role === 'Dueño' || currentUser.role === 'Administrador';
 
   useEffect(() => {
     if (!activeShift) {
       setOrdersToday([]);
+      setSalesByWaiter([]);
       return;
     }
     let cancelled = false;
     setLoadingOrders(true);
-    restaurantService
-      .getOrdersByDate(activeShift.date)
-      .then((data) => { if (!cancelled) setOrdersToday(data); })
+    Promise.all([
+      restaurantService.getOrdersByDate(activeShift.date),
+      restaurantService.getSalesByWaiter(activeShift.date),
+    ])
+      .then(([orders, byWaiter]) => {
+        if (cancelled) return;
+        setOrdersToday(orders);
+        setSalesByWaiter(byWaiter);
+      })
       .catch((err) => {
         if (!cancelled) toast.error(err instanceof Error ? err.message : 'Error al cargar órdenes');
       })
@@ -216,6 +230,40 @@ function CurrentShiftTab({ activeShift, currentUser, onOpenShift, onCloseShift }
                     <td className="p-3 text-right">{formatMoney(Number(o.total) || 0)}</td>
                     <td className="p-3 capitalize">{o.payment_method ?? '—'}</td>
                     <td className="p-3 text-gray-600">{o.closed_at ? formatTime(o.closed_at) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ventas por Mesero</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {salesByWaiter.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-400">
+              Sin ventas registradas en este turno
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="border-b text-sm text-gray-500">
+                <tr>
+                  <th className="text-left p-3">Mesero</th>
+                  <th className="text-right p-3">Órdenes atendidas</th>
+                  <th className="text-right p-3">Total vendido</th>
+                  <th className="text-right p-3">Ticket promedio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salesByWaiter.map((w) => (
+                  <tr key={w.waiter_id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="p-3 font-medium">{w.waiter_name}</td>
+                    <td className="p-3 text-right">{w.total_orders}</td>
+                    <td className="p-3 text-right">{formatMoney(Number(w.total_amount) || 0)}</td>
+                    <td className="p-3 text-right">{formatMoney(Number(w.avg_ticket) || 0)}</td>
                   </tr>
                 ))}
               </tbody>
