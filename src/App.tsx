@@ -5,6 +5,8 @@ import { PinAuthDialog } from './components/PinAuthDialog';
 import { FloorPlan } from './components/restaurant/FloorPlan';
 import { OrderPanel } from './components/restaurant/OrderPanel';
 import { MenuAdmin } from './components/restaurant/MenuAdmin';
+import { UserManagement } from './components/restaurant/UserManagement';
+import { InventoryManagement } from './components/restaurant/InventoryManagement';
 import { useUsers } from './hooks/useUsers';
 import { useWaste } from './hooks/useWaste';
 import { useRestaurant } from './hooks/useRestaurant';
@@ -48,8 +50,16 @@ interface NavItem {
 }
 
 export default function App() {
-  const { users } = useUsers();
-  useWaste();
+  const { users, addUser, updateUser, deleteUser } = useUsers();
+  const {
+    inventoryItems,
+    wasteRecords,
+    createItem,
+    updateItem,
+    deleteItem,
+    addStock,
+    registerWaste,
+  } = useWaste();
   const {
     tables,
     activeOrders,
@@ -185,9 +195,28 @@ export default function App() {
       case 'dashboard':
         return <Dashboard />;
       case 'users':
-        return <Placeholder label="Usuarios" icon={UsersIcon} />;
+        return (
+          <UserManagement
+            users={users}
+            currentUser={currentUser}
+            onAddUser={addUser}
+            onUpdateUser={updateUser}
+            onDeleteUser={deleteUser}
+          />
+        );
       case 'inventory':
-        return <Placeholder label="Inventario" icon={PackageOpen} />;
+        return (
+          <InventoryManagement
+            inventoryItems={inventoryItems}
+            wasteRecords={wasteRecords}
+            currentUser={currentUser}
+            onCreateItem={createItem}
+            onUpdateItem={updateItem}
+            onDeleteItem={deleteItem}
+            onAddStock={addStock}
+            onRegisterWaste={registerWaste}
+          />
+        );
       case 'reports':
         return <Placeholder label="Reportes" icon={FileText} />;
       case 'menuAdmin':

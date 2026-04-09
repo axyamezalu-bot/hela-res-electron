@@ -1,39 +1,50 @@
+export interface InventoryItem {
+  id: string;
+  name: string;
+  unit: 'unidad' | 'kg' | 'g' | 'l' | 'ml';
+  stock: number;
+  min_stock: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WasteRecord {
   id: string;
-  productId?: string;
-  productName: string;
-  productCode: string;
+  item_id: string;
+  item_name: string;
+  unit?: string;
   quantity: number;
   reason: string;
-  userId?: string;
-  userName: string;
+  user_id: string;
+  user_name: string;
   date: string;
 }
 
-function rowToWaste(row: any): WasteRecord {
-  return {
-    id: row.id,
-    productId: row.product_id,
-    productName: row.product_name,
-    productCode: row.product_code,
-    quantity: row.quantity,
-    reason: row.reason,
-    userId: row.user_id,
-    userName: row.user_name,
-    date: row.date,
-  };
-}
+const api = () => (window as any).electronAPI;
+
+export const inventoryService = {
+  async getAll(): Promise<InventoryItem[]> {
+    return await api().query('inventory:getAll');
+  },
+  async create(data: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> {
+    return await api().query('inventory:create', data);
+  },
+  async update(data: Omit<InventoryItem, 'created_at' | 'updated_at'>): Promise<InventoryItem> {
+    return await api().query('inventory:update', data);
+  },
+  async delete(id: string): Promise<void> {
+    await api().query('inventory:delete', id);
+  },
+  async addStock(id: string, amount: number): Promise<InventoryItem> {
+    return await api().query('inventory:addStock', { id, amount });
+  },
+};
 
 export const wasteServiceElectron = {
   async getAll(): Promise<WasteRecord[]> {
-    const rows = await (window as any).electronAPI.query('waste:getAll');
-    return rows.map(rowToWaste);
+    return await api().query('waste:getAll');
   },
-  async create(data: {
-    productId: string; productName: string; productCode: string;
-    quantity: number; reason: string; userId: string; userName: string;
-  }): Promise<WasteRecord> {
-    const row = await (window as any).electronAPI.query('waste:create', data);
-    return rowToWaste(row);
+  async create(data: Omit<WasteRecord, 'id' | 'date'>): Promise<WasteRecord> {
+    return await api().query('waste:create', data);
   },
 };
