@@ -82,6 +82,24 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('cash-drawer:open', async () => {
+    try {
+      const { PosPrinter } = require('electron-pos-printer');
+      await PosPrinter.print([
+        { type: 'text', value: ' ', style: {} }
+      ], {
+        preview: false,
+        pageSize: '80mm',
+        copies: 1,
+        silent: true,
+      });
+      return { success: true };
+    } catch (error) {
+      console.log('Cash drawer: no printer configured', error);
+      return { success: false, error: String(error) };
+    }
+  });
+
   createWindow();
 });
 

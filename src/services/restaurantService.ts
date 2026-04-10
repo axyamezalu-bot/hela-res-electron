@@ -135,6 +135,10 @@ export const restaurantService = {
   },
 
   // Printing
+  async openCashDrawer(): Promise<void> {
+    await (window as any).electronAPI.openCashDrawer();
+  },
+
   async printKitchenTicket(data: {
     tableNumber: number;
     tableName: string;

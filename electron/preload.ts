@@ -10,4 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Printing
   printKitchenTicket: (data: unknown) => ipcRenderer.invoke('print:kitchen-ticket', data),
+
+  openCashDrawer: () => ipcRenderer.invoke('cash-drawer:open'),
 });
