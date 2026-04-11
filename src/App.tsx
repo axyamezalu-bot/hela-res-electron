@@ -23,7 +23,10 @@ import {
   Menu,
   X,
   LogOut,
+  Clock,
+  PlayCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
 import { Toaster } from './components/ui/sonner';
@@ -250,6 +253,40 @@ export default function App() {
           />
         );
       case 'floorPlan':
+        if (!activeShift) {
+          return (
+            <div className="flex flex-col items-center justify-center h-full gap-6">
+              <div className="text-center space-y-2">
+                <Clock className="w-16 h-16 text-gray-300 mx-auto" />
+                <h2 className="text-xl font-semibold text-gray-700">Sin turno activo</h2>
+                <p className="text-gray-500 max-w-sm">
+                  Debes abrir un turno antes de comenzar a tomar comandas.
+                </p>
+              </div>
+              {isAdmin && (
+                <Button
+                  size="lg"
+                  onClick={async () => {
+                    await openShift({
+                      date: new Date().toISOString().split('T')[0],
+                      user_id: currentUser.id,
+                      user_name: currentUser.fullName,
+                    });
+                    toast.success('Turno abierto. ¡Listo para operar!');
+                  }}
+                >
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  Abrir Turno Ahora
+                </Button>
+              )}
+              {!isAdmin && (
+                <p className="text-sm text-gray-400">
+                  Solicita a un Administrador o Dueño que abra el turno.
+                </p>
+              )}
+            </div>
+          );
+        }
         return (
           <>
             <FloorPlan
@@ -271,6 +308,7 @@ export default function App() {
                 menuCategories={menuCategories}
                 menuItems={menuItems}
                 currentUser={currentUser}
+                activeShift={activeShift}
                 onCreateOrder={async () => {
                   const created = await createOrder({
                     table_id: selectedTable.id,
@@ -405,6 +443,17 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">{currentUser.fullName}</span>
+            {activeShift ? (
+              <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Turno activo
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-gray-300" />
+                Sin turno
+              </span>
+            )}
             <Badge variant="outline">{currentUser.role}</Badge>
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">
               <LogOut className="w-4 h-4" />

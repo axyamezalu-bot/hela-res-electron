@@ -28,12 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
+import { toast } from 'sonner';
 import type {
   RestaurantTable,
   Order,
   OrderItem,
   MenuCategory,
   MenuItem,
+  Shift,
 } from '../../types/restaurant';
 import type { User } from '../../App';
 
@@ -44,6 +46,7 @@ interface OrderPanelProps {
   menuCategories: MenuCategory[];
   menuItems: MenuItem[];
   currentUser: User;
+  activeShift: Shift | null;
   onCreateOrder: () => Promise<void>;
   onAddItem: (item: MenuItem, quantity: number, notes?: string) => Promise<void>;
   onRemoveItem: (item: OrderItem) => Promise<void>;
@@ -69,6 +72,7 @@ export function OrderPanel(props: OrderPanelProps) {
     menuCategories,
     menuItems,
     currentUser,
+    activeShift,
     onCreateOrder,
     onAddItem,
     onRemoveItem,
@@ -112,7 +116,13 @@ export function OrderPanel(props: OrderPanelProps) {
     try { await fn(); } finally { setLoading(false); }
   };
 
-  const handleCreate = () => wrap(() => onCreateOrder());
+  const handleCreate = () => {
+    if (!activeShift) {
+      toast.error('No hay turno activo. Abre un turno para comenzar.');
+      return;
+    }
+    return wrap(() => onCreateOrder());
+  };
 
   const handleAdd = (item: MenuItem) => wrap(() => onAddItem(item, 1));
 
@@ -346,7 +356,13 @@ export function OrderPanel(props: OrderPanelProps) {
                   </Button>
                 )}
                 {order.status === 'abierta' && total > 0 && (
-                  <Button onClick={() => setPayOpen(true)} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => {
+                    if (!activeShift) {
+                      toast.error('No hay turno activo. Abre un turno desde Reportes.');
+                      return;
+                    }
+                    setPayOpen(true);
+                  }} disabled={loading} className="bg-green-600 hover:bg-green-700">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Cobrar
                   </Button>
